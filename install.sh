@@ -6,12 +6,12 @@ target=/opt/dnsmasq-rest-api/
 
 echo "Installing dnsmasq-rest-api to $target."
 
-[ -d $target ] || git clone git://github.com/bpaquet/dnsmasq-rest-api.git $target
+[ -d $target ] || git clone git://github.com/jaykepeters/dnsmasq-rest-api.git $target
 
 echo "Configuring dnsmasq."
 
 ln -sf $target/config/dnsmasq/dnsmasq-rest-api.conf /etc/dnsmasq.d/dnsmasq-rest-api.conf
-/etc/init.d/dnsmasq restart
+/etc/init.d/pihole-FTL restart
 
 echo "Allow dnsmasq-rest-api to send signal to dnsmasq"
 
@@ -21,7 +21,8 @@ chmod 0440 /etc/sudoers.d/dnsmasq
 echo "Configuring apache2"
 
 a2enmod rewrite
-ln -sf $target/config/apache2/dnsmasq-rest-api.conf /etc/apache2/conf.d/dnsmasq-rest-api.conf
+ln -sf $target/config/apache2/dnsmasq-rest-api.conf /etc/apache2/sites-available/dnsmasq-rest-api.conf
+a2ensite dnsmasq-rest-api
 /etc/init.d/apache2 restart
 chown -R www-data $target/zones
 cp $target/www/config.example.php $target/www/config.php
@@ -31,14 +32,14 @@ echo "Dnsmasq-rest-api installed."
 echo "Running tests."
 
 echo "* Listing zones"
-curl -s http://localhost/dnsmasq-rest-api/zones | grep "\\[" | grep "\\]"
+curl -s http://localhost:8081/dnsmasq-rest-api/zones | grep "\\[" | grep "\\]"
 echo "* Adding records"
-curl -s -X POST http://localhost/dnsmasq-rest-api/zones/myTest/127.0.0.2/localhost.test | grep OK
+curl -s -X POST http://localhost:8081/dnsmasq-rest-api/zones/myTest/127.0.0.2/localhost.test | grep OK
 echo "* Reload dnsmasq"
-curl -s -X POST http://localhost/dnsmasq-rest-api/reload | grep OK
+curl -s -X POST http://localhost:8081/dnsmasq-rest-api/reload | grep OK
 echo "* Testing dns"
 nslookup localhost.test 127.0.0.1 | grep 127.0.0.2
 echo "* Removing test zone"
-curl -s -X DELETE http://localhost/dnsmasq-rest-api/zones/myTest | grep OK
+curl -s -X DELETE http://localhost:8081/dnsmasq-rest-api/zones/myTest | grep OK
 
 echo "Tests ok."
